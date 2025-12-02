@@ -11,6 +11,8 @@ import 'reactflow/dist/style.css';
 import { FaPlay, FaSave, FaPlus, FaSpinner } from 'react-icons/fa';
 import axios from 'axios';
 import PropertiesPanel from '../components/PropertiesPanel'; // Import the new panel
+import { io } from 'socket.io-client';
+import { useEffect } from 'react'; // Add useEffect
 
 const API_URL = "http://localhost:8081";
 
@@ -116,6 +118,44 @@ const WorkflowEditorPage = () => {
     setTimeout(() => setIsRunning(false), 2000);
   };
 
+  useEffect(() => {
+    // 1. Connect to Gateway
+    console.log("🔌 Attempting Socket Connection...");
+    const socket = io(API_URL, {
+        transports: ['polling', 'websocket'], // <--- ADD 'polling' FIRST
+        reconnectionAttempts: 5,
+        path: '/socket.io/',
+    });
+
+    socket.on('connect', () => {
+        console.log("🟢 Connected to Real-Time Gateway with ID:", socket.id);
+    });
+
+    socket.on('connect_error', (err) => {
+        console.error("🔴 Socket Connection Error:", err);
+    });
+
+    // 2. Listen for Agent Updates
+    socket.on('node_update', (data) => {
+        console.log("⚡ SOCKET EVENT RECEIVED:", data);
+        
+        setNodes((nds) => nds.map((node) => {
+            // Check if this node belongs to the agent that just finished
+            if (node.data.agentId === data.agent_id) {
+                console.log(`✅ MATCH FOUND! Updating Node: ${node.id}`);
+                return {
+                    ...node,
+                    style: { ...node.style, border: '2px solid #10B981', boxShadow: '0 0 20px #10B981' },
+                    data: { ...node.data, label: `${node.data.label.replace(' ✅', '')} ✅` } // Prevent double checks
+                };
+            }
+            return node;
+        }));
+    });
+
+    return () => socket.disconnect();
+  }, []);
+
   return (
     <div className="h-full flex flex-col bg-gray-900 text-white animate-fade-in relative">
       
@@ -146,6 +186,11 @@ const WorkflowEditorPage = () => {
           onPaneClick={onPaneClick} // Capture Background Clicks
           fitView
           className="bg-gray-900"
+          // --- NEW: Explicitly allow deletion ---
+          deleteKeyCode={['Backspace', 'Delete']}
+          // --- NEW: visual styling for selection ---
+          multiSelectionKeyCode={['Control', 'Meta']}
+          selectionKeyCode={['Shift']}
         >
           <Background color="#374151" gap={20} />
           <Controls className="bg-gray-800 border-gray-700 text-white fill-white" />

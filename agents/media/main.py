@@ -2,6 +2,7 @@ import sys
 import os
 import time
 import json
+import requests
 
 # Fix imports
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../../')))
@@ -71,6 +72,19 @@ def on_message(signal):
         # Send result back
         client.send(signal.source_agent_id, "TASK_RESULT", response_payload)
         print(f"    [Done] Sent URL: {response_payload}")
+
+        # --- NEW: Report to Gateway for UI Update ---
+    try:
+        # We assume a fake workflow ID for this demo
+        requests.post("http://localhost:8081/api/v1/progress", json={
+            "workflow_id": "demo-flow",
+            "agent_id": AGENT_ID,
+            "status": "COMPLETED",
+            "result_url": url
+        })
+        print("    [UI] Status pushed to Gateway.")
+    except Exception as e:
+        print(f"    [UI] Warning: Could not push status: {e}")
 
 if __name__ == "__main__":
     client = AgentClient(AGENT_ID, kernel_address="localhost:50051")

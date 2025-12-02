@@ -51,8 +51,7 @@ pip install -e .
 
 
 ## run the uvicorn gateway (make sure you are in root folder)
-uvicorn gateway.main:app --reload --port 8081
-
+uvicorn gateway.main:socket_app --reload --port 8081
 ----------------------------------------------------------------------------
 
 ## Create the react ui
@@ -62,12 +61,13 @@ npm create vite@latest ui -- --template react
 # 2. Go into the folder
 cd ui
 
-# 3. Install dependencies
+# 3. Install dependencies (make sure u are in ui folder)
 npm install
 npm install tailwindcss@3.4.17 postcss autoprefixer
 npm install react-router-dom react-icons
 npm install recharts
 npm install reactflow
+npm install socket.io-client
 
 # configure Tailwind CSS
 npx tailwindcss init -p

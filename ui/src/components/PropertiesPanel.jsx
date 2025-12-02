@@ -61,9 +61,10 @@ const PropertiesPanel = ({ selectedNode, onClose, onUpdate }) => {
             className="w-full bg-gray-900 border border-gray-700 rounded-lg p-3 text-white focus:border-green-500 focus:outline-none appearance-none"
           >
             <option value="">Select an Agent...</option>
-            <option value="researcher-1">Researcher Agent</option>
+            <option value="researcher-1">Researcher Agent (Web)</option>
             <option value="coder-alpha">Coder Agent (Llama 3)</option>
-            <option value="robot-1">Robot Controller</option>
+            <option value="media-director">Media Director (Video/Audio)</option>
+            <option value="robot-1">Robot Controller (ROS2)</option>
           </select>
         </div>
 
