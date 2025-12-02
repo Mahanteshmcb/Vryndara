@@ -20,7 +20,7 @@ def run():
         source_agent_id="User-CLI", 
         target_agent_id="coder-alpha",
         type="TASK_REQUEST",
-        payload="Write a python function to add two numbers",
+        payload="Write a Python class for a TicTacToe game with a check_winner method.",
         timestamp=int(time.time())
     )
     
