@@ -46,6 +46,31 @@ New-Item -ItemType File -Force sdk/python/vryndara/__init__.py
 
 ## Install Vryndara in "Editable Mode"
 # This is the magic step. It links your folder to Python's internal library list.
-
 pip install -e .
 # Expected Output: You should see Successfully installed vryndara-0.1.0.
+
+
+## run the uvicorn gateway 
+uvicorn gateway.main:app --reload --port 8081
+
+----------------------------------------------------------------------------
+
+## Create the react ui
+# 1. Create the React app in a folder named 'ui'
+npm create vite@latest ui -- --template react
+
+# 2. Go into the folder
+cd ui
+
+# 3. Install dependencies
+npm install
+npm install tailwindcss@3.4.17 postcss autoprefixer
+npm install react-router-dom react-icons
+npm install recharts
+npm install reactflow
+
+# configure Tailwind CSS
+npx tailwindcss init -p
+
+# Launch the ui (make sure you are in the ui folder)
+npm run dev
