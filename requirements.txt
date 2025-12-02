@@ -7,3 +7,4 @@ greenlet
 ollama
 uvicorn
 fastapi
+boto3

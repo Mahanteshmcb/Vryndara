@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-  # The Database
+  # ... (Your existing db service stays here) ...
   db:
     image: postgres:15-alpine
     container_name: vryndara-db
@@ -15,12 +15,35 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  # A simple Web UI to view the database (so you don't need CLI)
-  adminer:
-    image: adminer
-    restart: always
+  # --- NEW: MinIO Object Storage (The "Hard Drive") ---
+  minio:
+    image: minio/minio
+    container_name: vryndara-storage
     ports:
-      - "8080:8080"
+      - "9000:9000" # API Port (for Agents)
+      - "9001:9001" # Web Console Port (for You)
+    environment:
+      MINIO_ROOT_USER: admin
+      MINIO_ROOT_PASSWORD: password123
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+
+  # --- NEW: Auto-Create Buckets (Setup Script) ---
+  createbuckets:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set myminio http://minio:9000 admin password123;
+      /usr/bin/mc mb myminio/vryndara-assets;
+      /usr/bin/mc mb myminio/historabook-output;
+      /usr/bin/mc anonymous set public myminio/vryndara-assets;
+      /usr/bin/mc anonymous set public myminio/historabook-output;
+      exit 0;
+      "
 
 volumes:
   postgres_data:
+  minio_data: # Persist files even if docker restarts

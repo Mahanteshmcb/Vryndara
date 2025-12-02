@@ -36,6 +36,12 @@ const initialNodes = [
     position: { x: 250, y: 350 },
     style: { background: '#1F2937', color: '#fff', border: '1px solid #EC4899', borderRadius: '10px', width: 180 }
   },
+  { 
+    id: '5', 
+    data: { label: 'Media Director', agentId: 'media-director', task: 'Render a cinematic video of the Roman Empire' }, 
+    position: { x: 400, y: 350 },
+    style: { background: '#1F2937', color: '#fff', border: '1px solid #F59E0B', borderRadius: '10px', width: 180 }
+  },
 ];
 
 const initialEdges = [
