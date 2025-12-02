@@ -50,7 +50,7 @@ pip install -e .
 # Expected Output: You should see Successfully installed vryndara-0.1.0.
 
 
-## run the uvicorn gateway 
+## run the uvicorn gateway (make sure you are in root folder)
 uvicorn gateway.main:app --reload --port 8081
 
 ----------------------------------------------------------------------------

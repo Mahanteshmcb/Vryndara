@@ -4,7 +4,6 @@ import grpc
 import warnings
 
 from protos import vryndara_pb2 as protos_dot_vryndara__pb2
-from protos import vryndara_pb2 as protos__slash__vryndara__pb2
 
 GRPC_GENERATED_VERSION = '1.76.0'
 GRPC_VERSION = grpc.__version__
@@ -50,6 +49,11 @@ class KernelStub(object):
                 request_serializer=protos_dot_vryndara__pb2.AgentInfo.SerializeToString,
                 response_deserializer=protos_dot_vryndara__pb2.Signal.FromString,
                 _registered_method=True)
+        self.ExecuteWorkflow = channel.unary_unary(
+                '/vryndara.Kernel/ExecuteWorkflow',
+                request_serializer=protos_dot_vryndara__pb2.WorkflowRequest.SerializeToString,
+                response_deserializer=protos_dot_vryndara__pb2.Ack.FromString,
+                _registered_method=True)
 
 
 class KernelServicer(object):
@@ -73,6 +77,13 @@ class KernelServicer(object):
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
+    def ExecuteWorkflow(self, request, context):
+        """NEW: The ability to run a sequence
+        """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
 
 def add_KernelServicer_to_server(servicer, server):
     rpc_method_handlers = {
@@ -90,6 +101,11 @@ def add_KernelServicer_to_server(servicer, server):
                     servicer.Subscribe,
                     request_deserializer=protos_dot_vryndara__pb2.AgentInfo.FromString,
                     response_serializer=protos_dot_vryndara__pb2.Signal.SerializeToString,
+            ),
+            'ExecuteWorkflow': grpc.unary_unary_rpc_method_handler(
+                    servicer.ExecuteWorkflow,
+                    request_deserializer=protos_dot_vryndara__pb2.WorkflowRequest.FromString,
+                    response_serializer=protos_dot_vryndara__pb2.Ack.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -173,6 +189,33 @@ class Kernel(object):
             '/vryndara.Kernel/Subscribe',
             protos_dot_vryndara__pb2.AgentInfo.SerializeToString,
             protos_dot_vryndara__pb2.Signal.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def ExecuteWorkflow(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/vryndara.Kernel/ExecuteWorkflow',
+            protos_dot_vryndara__pb2.WorkflowRequest.SerializeToString,
+            protos_dot_vryndara__pb2.Ack.FromString,
             options,
             channel_credentials,
             insecure,

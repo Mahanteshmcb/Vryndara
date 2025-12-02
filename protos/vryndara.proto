@@ -22,8 +22,24 @@ message Ack {
     string error = 2;
 }
 
+// --- NEW: Workflow Definitions ---
+message WorkflowStep {
+    string agent_id = 1;
+    string task_payload = 2;
+    int32 step_order = 3;
+}
+
+message WorkflowRequest {
+    string workflow_id = 1;
+    repeated WorkflowStep steps = 2;
+}
+// ---------------------------------
+
 service Kernel {
     rpc Register (AgentInfo) returns (Ack);
     rpc Publish (Signal) returns (Ack);
     rpc Subscribe (AgentInfo) returns (stream Signal);
+    
+    // NEW: The ability to run a sequence
+    rpc ExecuteWorkflow (WorkflowRequest) returns (Ack);
 }
