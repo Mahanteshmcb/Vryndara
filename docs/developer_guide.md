@@ -30,6 +30,7 @@ pip install -r requirements.txt
 
 # Run in terminal 
 python -m grpc_tools.protoc -I protos --python_out=. --grpc_python_out=. protos/vryndara.proto
+
 python kernel/main.py
 
 # Create __init__.py in every folder
@@ -74,3 +75,7 @@ npx tailwindcss init -p
 
 # Launch the ui (make sure you are in the ui folder)
 npm run dev
+
+# Run models
+python agents/coder/main.py
+python agents/media/main.py

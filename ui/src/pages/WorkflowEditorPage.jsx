@@ -26,29 +26,30 @@ const initialNodes = [
     style: { background: '#1F2937', color: '#fff', border: '1px solid #10B981', borderRadius: '10px', width: 180 }
   },
   { 
-    id: '2', 
-    data: { label: 'Coder Agent', agentId: 'coder-alpha', task: 'Write a Python script to print the first 10 Fibonacci numbers.' }, 
-    position: { x: 250, y: 200 },
-    style: { background: '#1F2937', color: '#fff', border: '1px solid #8B5CF6', borderRadius: '10px', width: 180 }
+    id: '4', 
+    data: { label: 'Researcher', agentId: 'researcher-1', task: 'Find facts about the history of the Steam Engine.' }, 
+    position: { x: 250, y: 200 }, // Placed BEFORE Media
+    style: { background: '#1F2937', color: '#fff', border: '1px solid #3B82F6', borderRadius: '10px', width: 180 }
+  },
+  { 
+    id: '5', 
+    data: { label: 'Media Director', agentId: 'media-director', task: 'Render a video based on the research.' }, 
+    position: { x: 250, y: 350 },
+    style: { background: '#1F2937', color: '#fff', border: '1px solid #F59E0B', borderRadius: '10px', width: 180 }
   },
   { 
     id: '3', 
     type: 'output', 
     data: { label: 'Output Log' }, 
-    position: { x: 250, y: 350 },
+    position: { x: 250, y: 500 },
     style: { background: '#1F2937', color: '#fff', border: '1px solid #EC4899', borderRadius: '10px', width: 180 }
-  },
-  { 
-    id: '5', 
-    data: { label: 'Media Director', agentId: 'media-director', task: 'Render a cinematic video of the Roman Empire' }, 
-    position: { x: 400, y: 350 },
-    style: { background: '#1F2937', color: '#fff', border: '1px solid #F59E0B', borderRadius: '10px', width: 180 }
   },
 ];
 
 const initialEdges = [
-  { id: 'e1-2', source: '1', target: '2', animated: true, style: { stroke: '#10B981' } },
-  { id: 'e2-3', source: '2', target: '3', markerEnd: { type: MarkerType.ArrowClosed }, style: { stroke: '#8B5CF6' } },
+  { id: 'e1-4', source: '1', target: '4', animated: true, style: { stroke: '#10B981' } },
+  { id: 'e4-5', source: '4', target: '5', animated: true, style: { stroke: '#3B82F6' } },
+  { id: 'e5-3', source: '5', target: '3', markerEnd: { type: MarkerType.ArrowClosed }, style: { stroke: '#F59E0B' } },
 ];
 
 const WorkflowEditorPage = () => {

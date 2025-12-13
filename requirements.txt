@@ -10,3 +10,4 @@ fastapi
 boto3
 python-socketio
 requests
+duckduckgo-search
