@@ -69,6 +69,7 @@ npm install react-router-dom react-icons
 npm install recharts
 npm install reactflow
 npm install socket.io-client
+npm install lucide-react
 
 # configure Tailwind CSS
 npx tailwindcss init -p

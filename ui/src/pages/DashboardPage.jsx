@@ -1,113 +1,151 @@
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { FaRobot, FaProjectDiagram, FaServer, FaBolt, FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa';
+import React, { useState, useEffect } from 'react';
+import { Activity, Server, Database, Terminal, Clock, Zap } from 'lucide-react';
+import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 
-// Mock Data for the Graph
-const healthData = [
-  { time: '10:00', load: 20 },
-  { time: '10:05', load: 35 },
-  { time: '10:10', load: 25 },
-  { time: '10:15', load: 60 },
-  { time: '10:20', load: 45 },
-  { time: '10:25', load: 80 },
-  { time: '10:30', load: 55 },
-];
+const GATEWAY_WS = "ws://localhost:8081/ws";
+
+// --- WIDGET COMPONENTS ---
 
 const StatCard = ({ title, value, subtext, icon: Icon, color }) => (
-  <div className="bg-gray-800 border border-gray-700 p-6 rounded-xl shadow-lg flex items-center justify-between">
-    <div>
-      <h3 className="text-gray-400 text-sm font-medium uppercase tracking-wider">{title}</h3>
-      <div className="text-3xl font-bold text-white mt-2">{value}</div>
-      <div className={`text-xs mt-1 ${color === 'green' ? 'text-green-400' : 'text-blue-400'}`}>
-        {subtext}
+  <div className={`bg-[#111113] border border-gray-800 p-5 rounded-xl hover:border-${color}-500/50 transition-colors`}>
+    <div className="flex justify-between items-start mb-4">
+      <div className={`p-2 rounded-lg bg-${color}-500/10 text-${color}-500`}>
+        <Icon size={20} />
+      </div>
+      <div className={`text-xs font-mono px-2 py-1 rounded bg-${color}-500/10 text-${color}-500`}>
+        ACTIVE
       </div>
     </div>
-    <div className={`p-4 rounded-full bg-opacity-10 ${color === 'green' ? 'bg-green-500 text-green-400' : 'bg-blue-500 text-blue-400'}`}>
-      <Icon className="text-2xl" />
+    <div className="text-2xl font-bold text-white mb-1">{value}</div>
+    <div className="text-xs text-gray-500">{subtext}</div>
+  </div>
+);
+
+const AgentCard = ({ name, role, status, model }) => (
+  <div className="flex items-center justify-between p-3 bg-[#111113] border border-gray-800 rounded-lg group hover:border-gray-600 transition-colors">
+    <div className="flex items-center gap-3">
+      <div className={`w-2 h-2 rounded-full ${status === 'idle' ? 'bg-green-500' : 'bg-yellow-500 animate-pulse'}`} />
+      <div>
+        <div className="text-sm font-medium text-gray-200">{name}</div>
+        <div className="text-xs text-gray-500 font-mono">{role}</div>
+      </div>
+    </div>
+    <div className="text-xs text-gray-600 bg-gray-900 px-2 py-1 rounded border border-gray-800 group-hover:border-gray-700">
+      {model}
     </div>
   </div>
 );
 
-const DashboardPage = () => {
+// --- PAGE COMPONENT ---
+
+export default function DashboardPage() {
+  const [isConnected, setIsConnected] = useState(false);
+  // Initial dummy data for the chart
+  const [loadData, setLoadData] = useState(Array(20).fill(0).map((_, i) => ({ time: i, value: 20 + Math.random() * 10 })));
+  
+  useEffect(() => {
+    // 1. Check Gateway Connection
+    const ws = new WebSocket(GATEWAY_WS);
+    ws.onopen = () => setIsConnected(true);
+    ws.onclose = () => setIsConnected(false);
+
+    // 2. Simulate Neural Load (Live Chart Animation)
+    const interval = setInterval(() => {
+      setLoadData(prev => {
+        const lastVal = prev[prev.length - 1].value;
+        const nextValue = Math.max(5, Math.min(100, lastVal + (Math.random() - 0.5) * 20));
+        return [...prev.slice(1), { time: Date.now(), value: nextValue }];
+      });
+    }, 1000);
+
+    return () => { ws.close(); clearInterval(interval); };
+  }, []);
+
   return (
-    <div className="p-8 space-y-8 animate-fade-in">
+    <div className="p-6 space-y-6 max-w-7xl mx-auto animate-fade-in text-white">
       
-      {/* Header */}
-      <div className="flex justify-between items-end">
+      {/* HEADER */}
+      <div className="flex justify-between items-end mb-4">
         <div>
-          <h1 className="text-3xl font-bold text-white">System Overview</h1>
-          <p className="text-gray-400 mt-1">Real-time metrics for Vryndara Kernel</p>
+          <h1 className="text-3xl font-bold tracking-tight">System Overview</h1>
+          <p className="text-gray-500 mt-1">Vryndara Orchestration Layer v1.0</p>
         </div>
-        <div className="flex gap-4">
-            <span className="flex items-center gap-2 text-green-400 bg-green-900/20 px-4 py-2 rounded-full border border-green-900/50 text-sm">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                Kernel Online
-            </span>
+        <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-bold border ${isConnected ? 'bg-green-900/20 border-green-900 text-green-400' : 'bg-red-900/20 border-red-900 text-red-400'}`}>
+          <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+          {isConnected ? "GATEWAY CONNECTED" : "GATEWAY OFFLINE"}
         </div>
       </div>
 
-      {/* Top Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Active Agents" value="3" subtext="1 Local, 2 Remote" icon={FaRobot} color="blue" />
-        <StatCard title="Running Workflows" value="1" subtext="Optimization Job" icon={FaProjectDiagram} color="green" />
-        <StatCard title="Memory Usage" value="24%" subtext="4.2GB / 16GB" icon={FaServer} color="blue" />
-        <StatCard title="Total Events" value="1,024" subtext="+120 this hour" icon={FaBolt} color="green" />
+      {/* TOP STATS GRID */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <StatCard title="Uptime" value="12h 45m" subtext="Since last reboot" icon={Clock} color="blue" />
+        <StatCard title="Memory" value="14.2 GB" subtext="64% Utilized" icon={Database} color="purple" />
+        <StatCard title="Agents" value="3 Online" subtext="All systems nominal" icon={Terminal} color="green" />
+        <StatCard title="Workflows" value="128" subtext="Executed today" icon={Zap} color="yellow" />
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      {/* MAIN CONTENT SPLIT */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Left Column: Health Graph */}
-        <div className="lg:col-span-2 bg-gray-800 border border-gray-700 rounded-xl p-6 shadow-lg">
-          <h2 className="text-xl font-bold text-white mb-6">System Load & Activity</h2>
+        {/* LEFT: CHART SECTION (2 Cols) */}
+        <div className="lg:col-span-2 bg-[#0a0a0a] border border-gray-800 rounded-xl p-5 shadow-sm">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="font-bold flex items-center gap-2">
+              <Activity size={18} className="text-blue-500" />
+              Neural Load
+            </h3>
+            <span className="text-xs text-gray-500 font-mono">LIVE TELEMETRY</span>
+          </div>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={healthData}>
+              <LineChart data={loadData}>
                 <defs>
-                  <linearGradient id="colorLoad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#10B981" stopOpacity={0.3}/>
-                    <stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
+                  <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.3}/>
+                    <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" vertical={false} />
-                <XAxis dataKey="time" stroke="#9CA3AF" />
-                <YAxis stroke="#9CA3AF" />
+                <XAxis dataKey="time" hide />
+                <YAxis hide domain={[0, 100]} />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#1F2937', borderColor: '#374151', color: '#fff' }} 
-                  itemStyle={{ color: '#10B981' }}
+                  contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px', color: '#fff' }}
+                  itemStyle={{ color: '#fff' }}
                 />
-                <Area type="monotone" dataKey="load" stroke="#10B981" fillOpacity={1} fill="url(#colorLoad)" strokeWidth={3} />
-              </AreaChart>
+                <Line 
+                  type="monotone" 
+                  dataKey="value" 
+                  stroke="#3b82f6" 
+                  strokeWidth={2}
+                  dot={false}
+                  activeDot={{ r: 4, fill: '#60a5fa' }}
+                />
+              </LineChart>
             </ResponsiveContainer>
           </div>
         </div>
 
-        {/* Right Column: Recent Activity Log */}
-        <div className="bg-gray-800 border border-gray-700 rounded-xl p-6 shadow-lg">
-          <h2 className="text-xl font-bold text-white mb-4">Recent Activity</h2>
-          <div className="space-y-4">
-            {[
-              { time: '10:32', msg: 'Coder Agent generated python_script.py', type: 'success' },
-              { time: '10:30', msg: 'User submitted task: "Write TicTacToe"', type: 'info' },
-              { time: '10:28', msg: 'Kernel synced with Postgres DB', type: 'info' },
-              { time: '10:15', msg: 'Gateway accepted connection from IP 127.0.0.1', type: 'success' },
-              { time: '09:55', msg: 'Warning: High Memory usage on Agent-2', type: 'warning' },
-            ].map((log, i) => (
-              <div key={i} className="flex gap-3 items-start border-b border-gray-700 pb-3 last:border-0">
-                <div className={`mt-1 ${log.type === 'warning' ? 'text-yellow-500' : 'text-green-500'}`}>
-                    {log.type === 'warning' ? <FaExclamationTriangle /> : <FaCheckCircle />}
-                </div>
-                <div>
-                  <p className="text-gray-300 text-sm">{log.msg}</p>
-                  <span className="text-gray-500 text-xs">{log.time}</span>
-                </div>
+        {/* RIGHT: AGENTS LIST (1 Col) */}
+        <div className="bg-[#0a0a0a] border border-gray-800 rounded-xl p-5">
+          <h3 className="font-bold flex items-center gap-2 mb-6">
+            <Server size={18} className="text-purple-500" />
+            Agent Registry
+          </h3>
+          <div className="space-y-3">
+            <AgentCard name="Researcher-1" role="Information Retrieval" status="idle" model="Llama-3-8b" />
+            <AgentCard name="Media-Director" role="Video Synthesis" status="idle" model="Llama-3-8b" />
+            <AgentCard name="Coder-Alpha" role="Software Engineer" status="idle" model="Codellama-7b" />
+            
+            <div className="mt-6 pt-4 border-t border-gray-800">
+              <div className="text-xs text-center text-gray-600 mb-2">INTEGRATIONS</div>
+              <div className="flex justify-center gap-4 text-gray-400">
+                <span className="flex items-center gap-1 text-xs"><div className="w-1.5 h-1.5 bg-green-500 rounded-full"/> Historabook</span>
+                <span className="flex items-center gap-1 text-xs"><div className="w-1.5 h-1.5 bg-green-500 rounded-full"/> VrindaDev</span>
               </div>
-            ))}
+            </div>
           </div>
         </div>
 
       </div>
     </div>
   );
-};
-
-export default DashboardPage;
+}

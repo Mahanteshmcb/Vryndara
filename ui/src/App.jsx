@@ -14,7 +14,7 @@ function App() {
           <Route path="/agents" element={<AgentGalleryPage />} />
           <Route path="/workflows" element={<WorkflowEditorPage />} />
           <Route path="/logs" element={<LiveConsolePage />} />
-          {/* Add a SettingsPage later */}
+          {/* Settings placeholder */}
           <Route path="/settings" element={<div className="p-8 text-white">Settings Page</div>} />
         </Routes>
       </Layout>

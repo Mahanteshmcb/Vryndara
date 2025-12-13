@@ -1,212 +1,190 @@
-import { useState, useCallback } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import ReactFlow, { 
+  ReactFlowProvider, 
+  addEdge, 
+  useNodesState, 
+  useEdgesState, 
   Controls, 
-  Background, 
-  applyEdgeChanges, 
-  applyNodeChanges, 
-  addEdge,
-  MarkerType
+  Background 
 } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { FaPlay, FaSave, FaPlus, FaSpinner } from 'react-icons/fa';
-import axios from 'axios';
-import PropertiesPanel from '../components/PropertiesPanel'; // Import the new panel
-import { io } from 'socket.io-client';
-import { useEffect } from 'react'; // Add useEffect
+import { Play, Brain } from 'lucide-react';
+import AgentNode from '../components/AgentNode';
 
-const API_URL = "http://localhost:8081";
+const nodeTypes = { agent: AgentNode };
 
-// Initial nodes (Notice the 'task' field is editable now!)
 const initialNodes = [
   { 
     id: '1', 
-    type: 'input', 
-    data: { label: 'Start Trigger' }, 
-    position: { x: 250, y: 50 },
-    style: { background: '#1F2937', color: '#fff', border: '1px solid #10B981', borderRadius: '10px', width: 180 }
+    type: 'agent', 
+    position: { x: 100, y: 100 }, 
+    data: { label: 'Researcher', type: 'researcher', task: 'Research the history of the Internet.', onTaskChange: () => {} } 
   },
   { 
-    id: '4', 
-    data: { label: 'Researcher', agentId: 'researcher-1', task: 'Find facts about the history of the Steam Engine.' }, 
-    position: { x: 250, y: 200 }, // Placed BEFORE Media
-    style: { background: '#1F2937', color: '#fff', border: '1px solid #3B82F6', borderRadius: '10px', width: 180 }
-  },
-  { 
-    id: '5', 
-    data: { label: 'Media Director', agentId: 'media-director', task: 'Render a video based on the research.' }, 
-    position: { x: 250, y: 350 },
-    style: { background: '#1F2937', color: '#fff', border: '1px solid #F59E0B', borderRadius: '10px', width: 180 }
-  },
-  { 
-    id: '3', 
-    type: 'output', 
-    data: { label: 'Output Log' }, 
-    position: { x: 250, y: 500 },
-    style: { background: '#1F2937', color: '#fff', border: '1px solid #EC4899', borderRadius: '10px', width: 180 }
-  },
+    id: '2', 
+    type: 'agent', 
+    position: { x: 500, y: 100 }, 
+    data: { label: 'Media Director', type: 'media', task: 'Create a movie script based on the research.', onTaskChange: () => {} } 
+  }
 ];
 
-const initialEdges = [
-  { id: 'e1-4', source: '1', target: '4', animated: true, style: { stroke: '#10B981' } },
-  { id: 'e4-5', source: '4', target: '5', animated: true, style: { stroke: '#3B82F6' } },
-  { id: 'e5-3', source: '5', target: '3', markerEnd: { type: MarkerType.ArrowClosed }, style: { stroke: '#F59E0B' } },
-];
+const initialEdges = [{ id: 'e1-2', source: '1', target: '2', animated: true, style: { stroke: '#3b82f6' } }];
 
-const WorkflowEditorPage = () => {
-  const [nodes, setNodes] = useState(initialNodes);
-  const [edges, setEdges] = useState(initialEdges);
+let id = 3;
+const getId = () => `${id++}`;
+
+const WorkflowEditor = () => {
+  const reactFlowWrapper = useRef(null);
+  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [isRunning, setIsRunning] = useState(false);
-  const [selectedNode, setSelectedNode] = useState(null); // Track which node is clicked
 
-  const onNodesChange = useCallback((changes) => setNodes((nds) => applyNodeChanges(changes, nds)), []);
-  const onEdgesChange = useCallback((changes) => setEdges((eds) => applyEdgeChanges(changes, eds)), []);
-  const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), []);
+  // --- Handlers ---
 
-  // --- NEW: Handle Click ---
-  const onNodeClick = useCallback((event, node) => {
-    setSelectedNode(node);
+  const onConnect = useCallback((params) => setEdges((eds) => addEdge({ ...params, animated: true, style: { stroke: '#3b82f6' } }, eds)), [setEdges]);
+
+  const onDragOver = useCallback((event) => {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
   }, []);
 
-  const onPaneClick = useCallback(() => {
-    setSelectedNode(null); // Close panel when clicking background
-  }, []);
+  const onDrop = useCallback(
+    (event) => {
+      event.preventDefault();
+      const type = event.dataTransfer.getData('application/reactflow');
+      if (!type) return;
 
-  // --- NEW: Update Node Data ---
-  const handleUpdateNode = (nodeId, newData) => {
-    setNodes((nds) => 
-      nds.map((node) => {
-        if (node.id === nodeId) {
-          return { 
-            ...node, 
-            data: { ...node.data, ...newData } // Merge new data
-          };
-        }
-        return node;
-      })
-    );
-    // Keep panel open but refresh data logic is handled by useEffect in panel
-  };
+      const position = reactFlowWrapper.current.getBoundingClientRect();
+      const newNode = {
+        id: getId(),
+        type: 'agent',
+        position: {
+          x: event.clientX - position.left - 100,
+          y: event.clientY - position.top,
+        },
+        data: { 
+          label: type === 'media' ? 'Media Director' : type === 'coder' ? 'Coder Alpha' : 'Researcher', 
+          type: type,
+          task: '',
+          // Simplified binding for demo
+          onTaskChange: (val) => { newNode.data.task = val; }
+        },
+      };
 
-  const handleRunSimulation = async () => {
+      setNodes((nds) => nds.concat(newNode));
+    },
+    [setNodes]
+  );
+
+  // --- EXECUTION ENGINE ---
+  const handleExecute = async () => {
     setIsRunning(true);
+    console.log("🚀 Compiling Workflow...");
+
+    // 1. Sort nodes by X position (Linear execution assumption for V1)
+    const sortedNodes = [...nodes].sort((a, b) => a.position.x - b.position.x);
     
-    // Convert Nodes to Steps (Dynamic!)
-    const steps = [];
-    let orderCounter = 1;
+    // 2. Map to Vryndara Protocol
+    const payload = {
+      steps: sortedNodes.map((node, index) => {
+        let agentId = "researcher-1"; // Default
+        if (node.data.type === "media") agentId = "media-director";
+        if (node.data.type === "coder") agentId = "coder-alpha";
+        
+        return {
+          agent_id: agentId,
+          task: node.data.task || "Do your job.",
+          order: index + 1
+        };
+      })
+    };
 
-    // Sort nodes by Y position to guess order (simple logic)
-    const sortedNodes = [...nodes].sort((a, b) => a.position.y - b.position.y);
-
-    sortedNodes.forEach(node => {
-        if (node.data.agentId && node.data.task) {
-            steps.push({
-                agent_id: node.data.agentId,
-                task: node.data.task, // Uses the CURRENT text in the node
-                order: orderCounter++ 
-            });
-        }
-    });
+    console.log("📤 Sending Payload:", payload);
 
     try {
-        console.log("Sending Workflow:", steps);
-        const res = await axios.post(`${API_URL}/api/v1/workflow`, { steps });
-        alert(`Workflow Started! ID: ${res.data.id}`);
-    } catch (err) {
-        console.error(err);
-        alert("Failed to start workflow.");
+      const res = await fetch("http://localhost:8081/api/v1/workflow", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      
+      const data = await res.json();
+      alert(`✅ Workflow Started! ID: ${data.id}`);
+    } catch (e) {
+      alert("❌ Execution Failed: " + e.message);
     }
-
-    setTimeout(() => setIsRunning(false), 2000);
+    setIsRunning(false);
   };
 
-  useEffect(() => {
-    // 1. Connect to Gateway
-    console.log("🔌 Attempting Socket Connection...");
-    const socket = io(API_URL, {
-        transports: ['polling', 'websocket'], // <--- ADD 'polling' FIRST
-        reconnectionAttempts: 5,
-        path: '/socket.io/',
-    });
-
-    socket.on('connect', () => {
-        console.log("🟢 Connected to Real-Time Gateway with ID:", socket.id);
-    });
-
-    socket.on('connect_error', (err) => {
-        console.error("🔴 Socket Connection Error:", err);
-    });
-
-    // 2. Listen for Agent Updates
-    socket.on('node_update', (data) => {
-        console.log("⚡ SOCKET EVENT RECEIVED:", data);
-        
-        setNodes((nds) => nds.map((node) => {
-            // Check if this node belongs to the agent that just finished
-            if (node.data.agentId === data.agent_id) {
-                console.log(`✅ MATCH FOUND! Updating Node: ${node.id}`);
-                return {
-                    ...node,
-                    style: { ...node.style, border: '2px solid #10B981', boxShadow: '0 0 20px #10B981' },
-                    data: { ...node.data, label: `${node.data.label.replace(' ✅', '')} ✅` } // Prevent double checks
-                };
-            }
-            return node;
-        }));
-    });
-
-    return () => socket.disconnect();
-  }, []);
-
   return (
-    <div className="h-full flex flex-col bg-gray-900 text-white animate-fade-in relative">
-      
-      {/* Toolbar */}
-      <div className="h-16 border-b border-gray-700 flex items-center justify-between px-6 bg-gray-800">
-        <h1 className="text-xl font-bold">Project Canvas</h1>
-        <div className="flex gap-3">
+    <div className="h-full flex flex-col bg-[#0a0a0a]">
+      {/* TOOLBAR */}
+      <div className="h-14 border-b border-gray-800 bg-[#111113] flex justify-between items-center px-4">
+        <div className="flex items-center gap-2">
+          <Brain className="text-purple-500" size={20} />
+          <h1 className="font-bold text-white">Workflow Architect</h1>
+        </div>
+        <div className="flex gap-2">
           <button 
-            onClick={handleRunSimulation}
+            onClick={handleExecute}
             disabled={isRunning}
-            className={`flex items-center gap-2 px-6 py-2 rounded-lg text-sm font-bold shadow-lg transition-all 
-                ${isRunning ? 'bg-gray-600' : 'bg-green-600 hover:bg-green-500 hover:scale-105'}`}
+            className="flex items-center gap-2 px-4 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded font-bold text-sm transition-colors disabled:opacity-50"
           >
-            {isRunning ? <FaSpinner className="animate-spin" /> : <FaPlay />}
-            {isRunning ? 'Executing...' : 'Run Simulation'}
+            {isRunning ? "Running..." : <><Play size={16} /> Run Pipeline</>}
           </button>
         </div>
       </div>
 
-      <div className="flex-1 w-full h-[calc(100vh-64px)]">
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          onNodeClick={onNodeClick} // Capture Clicks
-          onPaneClick={onPaneClick} // Capture Background Clicks
-          fitView
-          className="bg-gray-900"
-          // --- NEW: Explicitly allow deletion ---
-          deleteKeyCode={['Backspace', 'Delete']}
-          // --- NEW: visual styling for selection ---
-          multiSelectionKeyCode={['Control', 'Meta']}
-          selectionKeyCode={['Shift']}
-        >
-          <Background color="#374151" gap={20} />
-          <Controls className="bg-gray-800 border-gray-700 text-white fill-white" />
-        </ReactFlow>
+      <div className="flex-1 flex overflow-hidden">
+        {/* SIDEBAR */}
+        <div className="w-64 border-r border-gray-800 bg-[#0f0f10] p-4 space-y-4">
+          <div className="text-xs font-bold text-gray-500 uppercase">Library</div>
+          
+          <div className="space-y-2">
+            {['researcher', 'media', 'coder'].map((type) => (
+              <div 
+                key={type}
+                className="bg-[#1a1a1c] border border-gray-800 p-3 rounded cursor-move hover:border-gray-600 transition-colors flex items-center gap-3"
+                onDragStart={(event) => event.dataTransfer.setData('application/reactflow', type)}
+                draggable
+              >
+                <div className={`w-2 h-2 rounded-full bg-${type === 'media' ? 'pink' : type === 'coder' ? 'yellow' : 'cyan'}-500`} />
+                <span className="capitalize text-sm font-medium text-gray-300">{type} Agent</span>
+              </div>
+            ))}
+          </div>
+          
+          <div className="text-xs text-gray-600 mt-10">
+            Drag nodes onto the canvas.<br/>Connect them left-to-right.<br/>Click Run.
+          </div>
+        </div>
+
+        {/* CANVAS */}
+        <div className="flex-1 h-full" ref={reactFlowWrapper}>
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={onNodesChange}
+            onEdgesChange={onEdgesChange}
+            onConnect={onConnect}
+            onDrop={onDrop}
+            onDragOver={onDragOver}
+            nodeTypes={nodeTypes}
+            fitView
+          >
+            <Background color="#222" gap={16} />
+            <Controls className="bg-gray-800 border-gray-700 text-white" />
+          </ReactFlow>
+        </div>
       </div>
-
-      {/* The Property Panel Slide-out */}
-      <PropertiesPanel 
-        selectedNode={selectedNode} 
-        onClose={() => setSelectedNode(null)} 
-        onUpdate={handleUpdateNode}
-      />
-
     </div>
   );
 };
 
-export default WorkflowEditorPage;
+export default function WorkflowEditorPage() {
+  return (
+    <ReactFlowProvider>
+      <WorkflowEditor />
+    </ReactFlowProvider>
+  );
+}
