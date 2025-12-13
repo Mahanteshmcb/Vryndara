@@ -111,22 +111,24 @@ class VryndaraKernel(vryndara_pb2_grpc.KernelServicer):
             
             # 4. WAIT for the Agent to finish (Blocking Wait)
             try:
-                # Wait up to 60 seconds for the agent to reply
-                result_payload = await asyncio.wait_for(result_future, timeout=60.0)
+                # --- FIX 1: INCREASE TIMEOUT TO 300 SECONDS ---
+                result_payload = await asyncio.wait_for(result_future, timeout=300.0)
                 
                 logging.info(f"✅ Step {step.step_order} Complete.")
-                previous_step_result = result_payload # <--- UPDATE THE BATON
+                previous_step_result = result_payload 
                 
             except asyncio.TimeoutError:
                 logging.error(f"❌ Step {step.step_order} Timed Out! (Agent {step.agent_id} did not reply)")
-                previous_step_result = "" # Reset chain on failure
+                previous_step_result = "" 
             finally:
-                # Clean up the future
                 if step.agent_id in self.response_futures:
                     del self.response_futures[step.agent_id]
 
         logging.info(f"🏁 Workflow {workflow_id} Finished.")
-        return vryndara_pb2.WorkflowResponse(status="COMPLETED", workflow_id=workflow_id)
+        
+        # --- FIX 2: RETURN 'Ack' INSTEAD OF 'WorkflowResponse' ---
+        # The Gateway already knows the ID, so a simple success Ack is enough.
+        return vryndara_pb2.Ack(success=True, error=f"Completed: {workflow_id}")
 
 async def serve():
     await init_db()
