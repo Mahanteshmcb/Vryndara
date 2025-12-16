@@ -11,3 +11,7 @@ boto3
 python-socketio
 requests
 duckduckgo-search
+faster-whisper 
+sounddevice 
+scipy 
+colorama

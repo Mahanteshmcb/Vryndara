@@ -1,18 +1,54 @@
-# Python
+# --- Python Standard ---
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*$py.class
+*.so
 .Python
 env/
 venv/
+.venv/
 .conda/
 .env
 
-# VS Code
+# --- VS Code / IDEs ---
 .vscode/
+.idea/
+*.swp
+*.swo
 
-# Project Specific
+# --- Distribution / Build ---
 *.egg-info/
 dist/
 build/
+*.spec
+
+# --- Vryndara Temporary Files ---
+*.log
+headless_execution.log
+temp_input.wav
+response.wav
+temp_*.wav
+
+# --- Large Dependencies (Download separately) ---
+# Ignore the 3GB+ of AI models and binaries
+models/
+piper/
+
+# --- Job Outputs ---
+# We generally don't want to commit every render test
+Director_Jobs/*.png
+Director_Jobs/*.mp4
+Director_Jobs/*.json
+Director_Jobs/*.py
+# (Optional) Keep the folder itself, just not the files
+!Director_Jobs/.gitkeep
+
+# --- C++ Build Artifacts (VrindaAI) ---
+VrindaAI/build/
+VrindaAI/release/
+VrindaAI/debug/
+*.o
+*.obj
+*.exe
+*.dll
+*.lib

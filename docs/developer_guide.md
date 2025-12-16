@@ -25,6 +25,9 @@ pip install torch torchvision torchaudio --index-url https://download.pytorch.or
 # Install dependencies
 pip install -r requirements.txt
 
+# piper folder should be in rootfolder download and move it via
+curl.exe -L -o piper.zip https://github.com/rhasspy/piper/releases/download/2023.11.14-2/piper_windows_amd64.zip
+
 ----------------------------------------------------------------------------------------
 ----------------------------------------------------------------------------------------
 
