@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Activity, Server, Database, Terminal, Clock, Zap, ExternalLink, Box, Monitor } from 'lucide-react';
 import { LineChart, Line, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
+import { Link } from 'react-router-dom';
 
 const GATEWAY_WS = "ws://localhost:8081/ws";
 const APP_STORE_KEY = "vryndara_installed_apps";
@@ -138,6 +139,23 @@ export default function DashboardPage() {
                 <div className="p-2 text-gray-500 cursor-default">
                   <Monitor size={16} />
                 </div>
+              </div>
+            )}
+
+            {/* VRINDA AI */}
+            {installedApps.vrinda_ai && (
+              <div className="bg-[#111113] border border-gray-800 p-3 rounded-lg flex justify-between items-center group hover:border-cyan-500/50 transition-colors">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded bg-cyan-900/30 flex items-center justify-center text-cyan-500 font-bold">V</div>
+                  <div>
+                    <div className="font-bold text-sm">VrindaAI</div>
+                    <div className="text-[10px] text-gray-500">Engineering Engine</div>
+                  </div>
+                </div>
+                {/* Link Logic */}
+                <Link to="/vrinda-ai" className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded">
+                  <ExternalLink size={16} />
+                </Link>
               </div>
             )}
           </div>

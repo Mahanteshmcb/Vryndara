@@ -78,8 +78,13 @@ npm install lucide-react
 npx tailwindcss init -p
 
 # Launch the ui (make sure you are in the ui folder)
+cd ui
 npm run dev
 
 # Run models
 python agents/coder/main.py
 python agents/media/main.py
+
+# Docker 
+docker-compose up -d postgres
+docker ps

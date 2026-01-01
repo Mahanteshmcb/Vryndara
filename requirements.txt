@@ -15,3 +15,6 @@ faster-whisper
 sounddevice 
 scipy 
 colorama
+git+https://github.com/fogleman/sdf.git
+numpy-stl
+matplotlib

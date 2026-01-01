@@ -28,6 +28,7 @@ headless_execution.log
 temp_input.wav
 response.wav
 temp_*.wav
+engineering_output/*
 
 # --- Large Dependencies (Download separately) ---
 # Ignore the 3GB+ of AI models and binaries
@@ -52,3 +53,19 @@ VrindaAI/debug/
 *.exe
 *.dll
 *.lib
+
+# --- Local Development Links (Do Not Commit) ---
+# These are symbolic links to the VrindaAI repo or massive model folders
+
+# Ignore the linked backend source code (Prevents duplication)
+/src
+/Vryndara_Core
+/agents
+
+# Ignore the massive AI models and tools
+/llama.cpp
+/models
+
+# Ignore Python cache files that might have appeared
+__pycache__/
+*.pyc

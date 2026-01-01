@@ -4,6 +4,7 @@ import DashboardPage from './pages/DashboardPage';
 import AgentGalleryPage from './pages/AgentGalleryPage';
 import WorkflowEditorPage from './pages/WorkflowEditorPage';
 import LiveConsolePage from './pages/LiveConsolePage';
+import VrindaAIApp from './pages/VrindaAIApp'; // <--- IMPORT THIS
 
 function App() {
   return (
@@ -14,7 +15,8 @@ function App() {
           <Route path="/agents" element={<AgentGalleryPage />} />
           <Route path="/workflows" element={<WorkflowEditorPage />} />
           <Route path="/logs" element={<LiveConsolePage />} />
-          {/* Settings placeholder */}
+          <Route path="/vrinda-ai" element={<VrindaAIApp />} /> {/* <--- ADD ROUTE */}
+          
           <Route path="/settings" element={<div className="p-8 text-white">Settings Page</div>} />
         </Routes>
       </Layout>

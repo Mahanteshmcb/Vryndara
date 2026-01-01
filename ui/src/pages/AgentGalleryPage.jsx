@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bot, Code, Video, BookOpen, Settings, Download, Check } from 'lucide-react';
+import { Bot, Code, Video, BookOpen, Settings, Download, Check, Terminal } from 'lucide-react';
 
 const APP_STORE_KEY = "vryndara_installed_apps";
 
@@ -13,18 +13,29 @@ const initialApps = [
     description: "AI-powered history timeline generator. Converts text into interactive visual lessons.",
     capabilities: ["Timeline Gen", "Visual Learning", "Quiz Auto-Gen"],
     installed: false,
-    url: "http://localhost:8001" // CORRECTED PORT
+    url: "http://localhost:8001" 
   },
   { 
     id: "vrindadev",
     name: "VrindaDev", 
     role: "DEV TOOLS", 
-    icon: Code, 
+    icon: Terminal, 
     color: "purple",
     description: "Automated coding assistant and project bootstrapper. Generates boilerplate code instantly.",
     capabilities: ["Scaffolding", "Refactoring", "Doc Gen"],
     installed: false,
     url: "app://vrindadev" // Placeholder for Desktop App
+  },
+  { 
+    id: "vrinda_ai", 
+    name: "VrindaAI", 
+    role: "ENGINEERING", 
+    icon: Code, 
+    color: "cyan",
+    description: "Text-to-CAD Engineering Engine. Generates 3D STL files and blueprints from natural language prompts.",
+    capabilities: ["CAD Generation", "Physics Calc", "Blender Render"],
+    installed: false,
+    url: "/vrinda-ai" 
   },
   { 
     id: "media_director",
@@ -42,7 +53,7 @@ const initialApps = [
     name: "Researcher", 
     role: "CORE AGENT", 
     icon: BookOpen, 
-    color: "cyan",
+    color: "blue",
     description: "Deep web retrieval specialist. Gathers facts and summarizes documents.",
     capabilities: ["Web Scrape", "Fact Check"],
     installed: true,

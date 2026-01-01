@@ -1,16 +1,53 @@
 import asyncio
-from fastapi import FastAPI, WebSocket, HTTPException, WebSocketDisconnect
-from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import List
-import grpc
 import sys
 import os
 import json
+from typing import List
+from pathlib import Path
 
-# Fix imports for Protos
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../')))
-from protos import vryndara_pb2, vryndara_pb2_grpc
+from fastapi import FastAPI, WebSocket, HTTPException, WebSocketDisconnect
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
+import grpc
+
+# --- 1. ROBUST PATH SETUP (CRITICAL FIX) ---
+# Calculate the absolute path to the 'Vryndara' root folder
+current_file = Path(__file__).resolve()
+project_root = current_file.parent.parent  # Go up from 'gateway' to 'Vryndara'
+
+# Insert at position 0 to prioritize local modules over installed packages
+if str(project_root) not in sys.path:
+    sys.path.insert(0, str(project_root))
+
+print(f"📂 Project Root Detected: {project_root}")
+print(f"📂 Python Path[0]: {sys.path[0]}")
+
+# --- 2. IMPORTS ---
+# Proto Imports
+try:
+    from protos import vryndara_pb2, vryndara_pb2_grpc
+except ImportError:
+    # Fallback if protos are not generated or in path
+    print("⚠️ Warning: gRPC Protos not found. Workflow features may fail.")
+    vryndara_pb2 = None
+    vryndara_pb2_grpc = None
+
+# Engineering Imports
+try:
+    # Check if 'src' exists before importing
+    if not (project_root / "src").exists():
+        raise ImportError(f"'src' folder missing in {project_root}")
+
+    from Vryndara_Core.services.engineering_service import EngineeringService
+    from src.engines.blender_engine import BlenderEngine
+    from agents.coder.code_generator import CodeGenerator
+    print("✅ Core Modules Imported Successfully")
+except ImportError as e:
+    print(f"⚠️ Import Warning: Could not import Engineering modules. {e}")
+    print("   Ensure 'src' and 'Vryndara_Core' folders are in the root directory.")
+    EngineeringService = None
+    BlenderEngine = None
+    CodeGenerator = None
 
 app = FastAPI()
 socket_app = app # Alias for uvicorn
@@ -23,16 +60,61 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# --- 1. DATA MODELS (Matches vryndara_bridge.py) ---
+# --- 3. ENGINE INITIALIZATION ---
+print("🚀 VRYNDARA GATEWAY STARTING...")
+eng_service = None
+blender_engine = None
+coder_agent = None
+
+try:
+    if EngineeringService:
+        # 1. Engineering Service (SDF Geometry)
+        eng_service = EngineeringService(storage_manager=None)
+        
+        # 2. Blender Engine (Rendering)
+        blender_engine = BlenderEngine()
+        
+        # 3. Code Generator (Mistral Brain)
+        # Check LINKED path first, then local models path
+        linked_model_path = project_root / "llama.cpp" / "models" / "mistral.gguf"
+        local_model_path = project_root / "models" / "mistral.gguf"
+        
+        final_model_path = None
+        if linked_model_path.exists():
+            final_model_path = linked_model_path
+            print(f"🧠 Found Brain (Linked): {final_model_path}")
+        elif local_model_path.exists():
+            final_model_path = local_model_path
+            print(f"🧠 Found Brain (Local): {final_model_path}")
+        
+        if final_model_path:
+            coder_agent = CodeGenerator(model_path=str(final_model_path))
+            print("✅ Engines Loaded (Mistral + Blender)")
+        else:
+            print("⚠️ Mistral Model not found!")
+            print(f"   Checked: {linked_model_path}")
+            print(f"   Checked: {local_model_path}")
+            print("   (Engineering features will be disabled)")
+except Exception as e:
+    print(f"⚠️ Warning: Engines failed to load: {e}")
+
+# --- 4. DATA MODELS ---
+
 class StepInput(BaseModel):
     agent_id: str
-    task: str       # Bridge sends "task"
-    order: int      # Bridge sends "order"
+    task: str      
+    order: int      
 
 class WorkflowRequest(BaseModel):
     steps: List[StepInput]
 
-# --- 2. WEBSOCKET MANAGER ---
+class EngineeringRequest(BaseModel):
+    prompt: str
+
+class RenderRequest(BaseModel):
+    stl_path: str
+
+# --- 5. WEBSOCKET MANAGER ---
 class ConnectionManager:
     def __init__(self):
         self.active_connections: List[WebSocket] = []
@@ -53,21 +135,79 @@ class ConnectionManager:
 
 manager = ConnectionManager()
 
-# --- 3. API ROUTES ---
+# --- 6. API ROUTES ---
+
+# === ENGINEERING ENDPOINTS ===
+
+@app.post("/api/engineer/generate")
+async def generate_geometry(req: EngineeringRequest):
+    if not coder_agent or not eng_service:
+        raise HTTPException(status_code=503, detail="Engineering Engines not loaded. Check server logs.")
+
+    print(f"🛠️ Processing Engineering Task: {req.prompt}")
+    
+    try:
+        # A. Get Code from Mistral
+        generated_code = coder_agent.generate_code(req.prompt)
+        
+        # B. Compile Geometry
+        result = eng_service.generate_sdf_from_code(generated_code)
+        
+        return {
+            "status": "success",
+            "data": result,
+            "code": generated_code
+        }
+    except Exception as e:
+        print(f"🔥 Engineering Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/engineer/render")
+async def render_artifact(req: RenderRequest):
+    if not blender_engine:
+        raise HTTPException(status_code=503, detail="Blender Engine not loaded")
+
+    print(f"🎨 Rendering: {req.stl_path}")
+    
+    try:
+        # Define output directory
+        output_dir = project_root / "engineering_output" / "render_output"
+        output_dir.mkdir(parents=True, exist_ok=True)
+        
+        spec = {
+            "assets": [req.stl_path],
+            "quality": "high",
+            "description": "Web Render"
+        }
+        
+        blender_engine.render_from_spec(spec, str(output_dir))
+        
+        # Find the newest image
+        files = sorted(output_dir.glob("*.png"), key=os.path.getmtime)
+        latest_image = str(files[-1]) if files else None
+        
+        return {
+            "status": "success",
+            "image_path": latest_image
+        }
+    except Exception as e:
+        print(f"🔥 Render Error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# === WORKFLOW ENDPOINTS ===
+
 @app.post("/api/v1/workflow")
 async def create_workflow(req: WorkflowRequest):
-    """
-    Receives JSON from Historabook -> Converts to gRPC -> Sends to Kernel
-    """
+    if not vryndara_pb2_grpc:
+        raise HTTPException(status_code=503, detail="gRPC Modules not loaded")
+
     print(f"📥 [Gateway] Received Workflow Request with {len(req.steps)} steps.")
     
     try:
-        # Connect to Kernel
         async with grpc.aio.insecure_channel('localhost:50051') as channel:
             stub = vryndara_pb2_grpc.KernelStub(channel)
             
-            # Map JSON to Protobuf
-            # IMPORTANT: Mapping 'task' (JSON) to 'task_payload' (gRPC)
             proto_steps = [
                 vryndara_pb2.WorkflowStep(
                     agent_id=s.agent_id,
@@ -78,8 +218,7 @@ async def create_workflow(req: WorkflowRequest):
             
             workflow_id = f"wf-{int(asyncio.get_event_loop().time())}"
             
-            # Call Kernel
-            response = await stub.ExecuteWorkflow(vryndara_pb2.WorkflowRequest(
+            await stub.ExecuteWorkflow(vryndara_pb2.WorkflowRequest(
                 workflow_id=workflow_id,
                 steps=proto_steps
             ))
@@ -95,9 +234,6 @@ async def create_workflow(req: WorkflowRequest):
 
 @app.post("/api/v1/progress")
 async def update_progress(data: dict):
-    """
-    Agents call this to update the UI
-    """
     print(f"🔄 [Gateway] Progress Update: {data.get('agent_id')} - {data.get('status')}")
     await manager.broadcast(data)
     return {"status": "ok"}
