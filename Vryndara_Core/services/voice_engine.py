@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import queue
 import logging
 import subprocess
 import sounddevice as sd
@@ -37,30 +38,76 @@ class VoiceEngine:
                 print(f"{Fore.RED}❌ Failed to load Whisper: {e}")
                 self.model = None
 
-    def listen(self, duration=5, threshold=0.02):
+    def listen(self, silence_limit=1.5, threshold=0.015):
         """
-        Records audio for a fixed duration (simple version) or until silence (advanced).
-        For Day 15, we will use a simple fixed duration or 'Press Enter to Stop'.
+        Smart Listening: Waits for you to speak, and stops when you are quiet.
         """
         if not self.model:
             return input(f"{Fore.YELLOW}🎤 (Text Mode) Enter command: {Style.RESET_ALL}")
 
-        print(f"{Fore.CYAN}🎤 Listening... (Speak now)")
+        print(f"{Fore.CYAN}🎤 Waiting for your voice... (Speak whenever you are ready)")
         
-        # Record audio
+        q = queue.Queue()
+        def callback(indata, frames, time, status):
+            q.put(indata.copy())
+
+        audio_buffer = []
+        is_speaking = False
+        silence_time = 0
+
+        # A small pre-buffer so we don't cut off the first letter of your sentence
+        pre_buffer = []
+
         try:
-            recording = sd.rec(int(duration * SAMPLE_RATE), samplerate=SAMPLE_RATE, channels=CHANNELS)
-            sd.wait()  # Wait until recording is finished
+            # Forcing channels=1 often fixes Windows laptop microphone issues!
+            with sd.InputStream(samplerate=SAMPLE_RATE, channels=1, callback=callback):
+                print(f"{Fore.CYAN}🎤 Mic is LIVE. Speak to see the volume meter move...")
+                while True:
+                    chunk = q.get()
+                    
+                    # Calculate the volume level
+                    rms = np.sqrt(np.mean(chunk**2))
+
+                    # --- THE LIVE VOLUME METER ---
+                    if not is_speaking:
+                        # Print a visual bar so you can see your mic levels
+                        level = int(rms * 1000)  # Scale up for visibility
+                        meter = "█" * min(level, 30)
+                        print(f"\rVolume: [{meter.ljust(30)}] (Level: {rms:.5f})", end="")
+
+                    # Using an ultra-low threshold of 0.008 to detect even the slightest voice (like a whisper)
+                    if rms > 0.008:
+                        if not is_speaking:
+                            print(f"\n{Fore.GREEN}⏺️ Voice detected! Recording...")
+                            is_speaking = True
+                        silence_time = 0
+                    
+                    if is_speaking:
+                        audio_buffer.append(chunk)
+                        if rms <= 0.006:
+                            silence_time += len(chunk) / SAMPLE_RATE
+                            if silence_time > silence_limit:
+                                break
+                    else:
+                        pre_buffer.append(chunk)
+                        if len(pre_buffer) > 10:
+                            pre_buffer.pop(0)
+
             print(f"{Fore.CYAN}⏳ Transcribing...")
+            audio_data = np.concatenate(audio_buffer, axis=0)
             
-            # Save temporary file (Whisper likes files)
+            # Save the file for Whisper
             temp_wav = "temp_input.wav"
-            wav.write(temp_wav, SAMPLE_RATE, recording)
+            wav.write(temp_wav, SAMPLE_RATE, audio_data)
             
             # Transcribe
             segments, _ = self.model.transcribe(temp_wav, beam_size=5)
             text = " ".join([segment.text for segment in segments]).strip()
             
+            # Ignore weird Whisper hallucinations (like the Georgian text from earlier)
+            if len(text) < 2:
+                return ""
+                
             print(f"{Fore.MAGENTA}🗣️ You said: {text}")
             return text
             

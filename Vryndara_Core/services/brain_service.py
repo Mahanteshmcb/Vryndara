@@ -3,7 +3,7 @@ import json
 from colorama import Fore
 
 # We assume a local LLM server is running on port 8080 (Standard for llama.cpp)
-API_URL = "http://localhost:8080/completion"
+API_URL = "http://127.0.0.1:8080/completion"
 
 class BrainService:
     def __init__(self):

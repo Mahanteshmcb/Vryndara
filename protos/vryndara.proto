@@ -22,7 +22,34 @@ message Ack {
     string error = 2;
 }
 
-// --- NEW: Workflow Definitions ---
+// --- NEW: Spatial & Vision Data ---
+message SpatialRequest {
+    string session_id = 1;
+    string object_id = 2;      // The 3D object being interacted with
+    string gesture = 3;        // e.g., "PINCH", "SWIPE_LEFT"
+    float x = 4;
+    float y = 5;
+    float z = 6;
+}
+
+message HologramCommand {
+    string action = 1;         // "SPAWN", "ROTATE", "MOVE"
+    string target_object = 2;
+    float x = 3;
+    float y = 4;
+    float z = 5;
+}
+
+// --- NEW: Hardware Node Management (For Phase 3) ---
+message NodeHeartbeat {
+    string node_id = 1;
+    float cpu_usage = 2;
+    float ram_usage = 3;
+    bool on_battery = 4;
+    int32 battery_level = 5;
+}
+
+// --- Workflow Definitions ---
 message WorkflowStep {
     string agent_id = 1;
     string task_payload = 2;
@@ -33,13 +60,15 @@ message WorkflowRequest {
     string workflow_id = 1;
     repeated WorkflowStep steps = 2;
 }
-// ---------------------------------
 
 service Kernel {
+    // Standard Agent routing
     rpc Register (AgentInfo) returns (Ack);
     rpc Publish (Signal) returns (Ack);
     rpc Subscribe (AgentInfo) returns (stream Signal);
-    
-    // NEW: The ability to run a sequence
     rpc ExecuteWorkflow (WorkflowRequest) returns (Ack);
+    
+    // NEW: Real-time streams for the 3D Engine
+    rpc StreamSpatialData (stream SpatialRequest) returns (stream HologramCommand);
+    rpc NodePing (NodeHeartbeat) returns (Ack);
 }

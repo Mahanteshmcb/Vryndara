@@ -11,6 +11,14 @@ conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvi
 # 4. Now install your project requirements
 pip install -r requirements.txt
 
+# 5. Create the Vision Environment(seperate env for vision camera)
+## Open a new terminal and run these commands to create a fresh conda  environment just for the camera:
+conda create -n vryndara-vision python=3.10 -y
+conda activate vryndara-vision
+
+## Install Only Vision Dependencies in this environment
+pip install mediapipe==0.10.9 opencv-python colorama
+
 --------------------------------------------------------------------------------------
 
 ## Make sure you use the py launcher to pick 3.10 for venv install
@@ -81,6 +89,10 @@ npx tailwindcss init -p
 cd ui
 npm run dev
 
+# Run the llama.cpp server for listening
+cd C:\Users\Mahantesh\DevelopmentProjects\VrindaAI\VrindaAI\llama.cpp\build\bin\Release
+.\llama-server.exe -m mistral.gguf --port 8080 -c 4096
+
 # Run models
 python agents/coder/main.py
 python agents/media/main.py
@@ -88,3 +100,7 @@ python agents/media/main.py
 # Docker 
 docker-compose up -d postgres
 docker ps
+
+
+# To compile vryndara.proto file run in terminal
+python -m grpc_tools.protoc -I./protos --python_out=./protos --grpc_python_out=./protos ./protos/vryndara.proto

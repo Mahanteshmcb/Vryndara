@@ -18,3 +18,5 @@ colorama
 git+https://github.com/fogleman/sdf.git
 numpy-stl
 matplotlib
+mediapipe == 0.10.9 --no-dependencies
+opencv-python

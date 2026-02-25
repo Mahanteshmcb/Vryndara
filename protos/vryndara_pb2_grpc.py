@@ -3,9 +3,9 @@
 import grpc
 import warnings
 
-from protos import vryndara_pb2 as protos_dot_vryndara__pb2
+from . import vryndara_pb2 as vryndara__pb2
 
-GRPC_GENERATED_VERSION = '1.76.0'
+GRPC_GENERATED_VERSION = '1.78.1'
 GRPC_VERSION = grpc.__version__
 _version_not_supported = False
 
@@ -18,7 +18,7 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + ' but the generated code in protos/vryndara_pb2_grpc.py depends on'
+        + ' but the generated code in vryndara_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
@@ -36,23 +36,33 @@ class KernelStub(object):
         """
         self.Register = channel.unary_unary(
                 '/vryndara.Kernel/Register',
-                request_serializer=protos_dot_vryndara__pb2.AgentInfo.SerializeToString,
-                response_deserializer=protos_dot_vryndara__pb2.Ack.FromString,
+                request_serializer=vryndara__pb2.AgentInfo.SerializeToString,
+                response_deserializer=vryndara__pb2.Ack.FromString,
                 _registered_method=True)
         self.Publish = channel.unary_unary(
                 '/vryndara.Kernel/Publish',
-                request_serializer=protos_dot_vryndara__pb2.Signal.SerializeToString,
-                response_deserializer=protos_dot_vryndara__pb2.Ack.FromString,
+                request_serializer=vryndara__pb2.Signal.SerializeToString,
+                response_deserializer=vryndara__pb2.Ack.FromString,
                 _registered_method=True)
         self.Subscribe = channel.unary_stream(
                 '/vryndara.Kernel/Subscribe',
-                request_serializer=protos_dot_vryndara__pb2.AgentInfo.SerializeToString,
-                response_deserializer=protos_dot_vryndara__pb2.Signal.FromString,
+                request_serializer=vryndara__pb2.AgentInfo.SerializeToString,
+                response_deserializer=vryndara__pb2.Signal.FromString,
                 _registered_method=True)
         self.ExecuteWorkflow = channel.unary_unary(
                 '/vryndara.Kernel/ExecuteWorkflow',
-                request_serializer=protos_dot_vryndara__pb2.WorkflowRequest.SerializeToString,
-                response_deserializer=protos_dot_vryndara__pb2.Ack.FromString,
+                request_serializer=vryndara__pb2.WorkflowRequest.SerializeToString,
+                response_deserializer=vryndara__pb2.Ack.FromString,
+                _registered_method=True)
+        self.StreamSpatialData = channel.stream_stream(
+                '/vryndara.Kernel/StreamSpatialData',
+                request_serializer=vryndara__pb2.SpatialRequest.SerializeToString,
+                response_deserializer=vryndara__pb2.HologramCommand.FromString,
+                _registered_method=True)
+        self.NodePing = channel.unary_unary(
+                '/vryndara.Kernel/NodePing',
+                request_serializer=vryndara__pb2.NodeHeartbeat.SerializeToString,
+                response_deserializer=vryndara__pb2.Ack.FromString,
                 _registered_method=True)
 
 
@@ -60,7 +70,8 @@ class KernelServicer(object):
     """Missing associated documentation comment in .proto file."""
 
     def Register(self, request, context):
-        """Missing associated documentation comment in .proto file."""
+        """Standard Agent routing
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -78,8 +89,20 @@ class KernelServicer(object):
         raise NotImplementedError('Method not implemented!')
 
     def ExecuteWorkflow(self, request, context):
-        """NEW: The ability to run a sequence
+        """Missing associated documentation comment in .proto file."""
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def StreamSpatialData(self, request_iterator, context):
+        """NEW: Real-time streams for the 3D Engine
         """
+        context.set_code(grpc.StatusCode.UNIMPLEMENTED)
+        context.set_details('Method not implemented!')
+        raise NotImplementedError('Method not implemented!')
+
+    def NodePing(self, request, context):
+        """Missing associated documentation comment in .proto file."""
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -89,23 +112,33 @@ def add_KernelServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'Register': grpc.unary_unary_rpc_method_handler(
                     servicer.Register,
-                    request_deserializer=protos_dot_vryndara__pb2.AgentInfo.FromString,
-                    response_serializer=protos_dot_vryndara__pb2.Ack.SerializeToString,
+                    request_deserializer=vryndara__pb2.AgentInfo.FromString,
+                    response_serializer=vryndara__pb2.Ack.SerializeToString,
             ),
             'Publish': grpc.unary_unary_rpc_method_handler(
                     servicer.Publish,
-                    request_deserializer=protos_dot_vryndara__pb2.Signal.FromString,
-                    response_serializer=protos_dot_vryndara__pb2.Ack.SerializeToString,
+                    request_deserializer=vryndara__pb2.Signal.FromString,
+                    response_serializer=vryndara__pb2.Ack.SerializeToString,
             ),
             'Subscribe': grpc.unary_stream_rpc_method_handler(
                     servicer.Subscribe,
-                    request_deserializer=protos_dot_vryndara__pb2.AgentInfo.FromString,
-                    response_serializer=protos_dot_vryndara__pb2.Signal.SerializeToString,
+                    request_deserializer=vryndara__pb2.AgentInfo.FromString,
+                    response_serializer=vryndara__pb2.Signal.SerializeToString,
             ),
             'ExecuteWorkflow': grpc.unary_unary_rpc_method_handler(
                     servicer.ExecuteWorkflow,
-                    request_deserializer=protos_dot_vryndara__pb2.WorkflowRequest.FromString,
-                    response_serializer=protos_dot_vryndara__pb2.Ack.SerializeToString,
+                    request_deserializer=vryndara__pb2.WorkflowRequest.FromString,
+                    response_serializer=vryndara__pb2.Ack.SerializeToString,
+            ),
+            'StreamSpatialData': grpc.stream_stream_rpc_method_handler(
+                    servicer.StreamSpatialData,
+                    request_deserializer=vryndara__pb2.SpatialRequest.FromString,
+                    response_serializer=vryndara__pb2.HologramCommand.SerializeToString,
+            ),
+            'NodePing': grpc.unary_unary_rpc_method_handler(
+                    servicer.NodePing,
+                    request_deserializer=vryndara__pb2.NodeHeartbeat.FromString,
+                    response_serializer=vryndara__pb2.Ack.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -133,8 +166,8 @@ class Kernel(object):
             request,
             target,
             '/vryndara.Kernel/Register',
-            protos_dot_vryndara__pb2.AgentInfo.SerializeToString,
-            protos_dot_vryndara__pb2.Ack.FromString,
+            vryndara__pb2.AgentInfo.SerializeToString,
+            vryndara__pb2.Ack.FromString,
             options,
             channel_credentials,
             insecure,
@@ -160,8 +193,8 @@ class Kernel(object):
             request,
             target,
             '/vryndara.Kernel/Publish',
-            protos_dot_vryndara__pb2.Signal.SerializeToString,
-            protos_dot_vryndara__pb2.Ack.FromString,
+            vryndara__pb2.Signal.SerializeToString,
+            vryndara__pb2.Ack.FromString,
             options,
             channel_credentials,
             insecure,
@@ -187,8 +220,8 @@ class Kernel(object):
             request,
             target,
             '/vryndara.Kernel/Subscribe',
-            protos_dot_vryndara__pb2.AgentInfo.SerializeToString,
-            protos_dot_vryndara__pb2.Signal.FromString,
+            vryndara__pb2.AgentInfo.SerializeToString,
+            vryndara__pb2.Signal.FromString,
             options,
             channel_credentials,
             insecure,
@@ -214,8 +247,62 @@ class Kernel(object):
             request,
             target,
             '/vryndara.Kernel/ExecuteWorkflow',
-            protos_dot_vryndara__pb2.WorkflowRequest.SerializeToString,
-            protos_dot_vryndara__pb2.Ack.FromString,
+            vryndara__pb2.WorkflowRequest.SerializeToString,
+            vryndara__pb2.Ack.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def StreamSpatialData(request_iterator,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.stream_stream(
+            request_iterator,
+            target,
+            '/vryndara.Kernel/StreamSpatialData',
+            vryndara__pb2.SpatialRequest.SerializeToString,
+            vryndara__pb2.HologramCommand.FromString,
+            options,
+            channel_credentials,
+            insecure,
+            call_credentials,
+            compression,
+            wait_for_ready,
+            timeout,
+            metadata,
+            _registered_method=True)
+
+    @staticmethod
+    def NodePing(request,
+            target,
+            options=(),
+            channel_credentials=None,
+            call_credentials=None,
+            insecure=False,
+            compression=None,
+            wait_for_ready=None,
+            timeout=None,
+            metadata=None):
+        return grpc.experimental.unary_unary(
+            request,
+            target,
+            '/vryndara.Kernel/NodePing',
+            vryndara__pb2.NodeHeartbeat.SerializeToString,
+            vryndara__pb2.Ack.FromString,
             options,
             channel_credentials,
             insecure,
