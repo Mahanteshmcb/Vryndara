@@ -97,6 +97,9 @@ cd C:\Users\Mahantesh\DevelopmentProjects\VrindaAI\VrindaAI\llama.cpp\build\bin\
 python agents/coder/main.py
 python agents/media/main.py
 
+# Run Kernel
+python kernel/main.py
+
 # Docker 
 docker-compose up -d postgres
 docker ps

@@ -67,6 +67,13 @@ class VryndaraKernel(vryndara_pb2_grpc.KernelServicer):
         except Exception as e:
             logging.error(f"DB Write Failed: {e}")
 
+        # This ensures the Bridge (UI-Gateway) receives the gesture data
+        for agent_id, queue in self.message_queues.items():
+            # We send to everyone who is NOT the source
+            if agent_id != request.source_agent_id:
+                await queue.put(request)
+
+                
         if target == "ComputationalEngineer":
             logging.info(f"⚙️ Kernel Intercept: Engineering Task received: {request.payload}")
             try:

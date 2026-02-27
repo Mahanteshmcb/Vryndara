@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { FaChartPie, FaRobot, FaProjectDiagram, FaTerminal, FaCogs } from 'react-icons/fa';
+import { FaChartPie, FaRobot, FaProjectDiagram, FaTerminal, FaCogs, FaEye } from 'react-icons/fa';
 
 const Layout = ({ children }) => {
   const location = useLocation();
@@ -9,6 +9,7 @@ const Layout = ({ children }) => {
     { path: '/agents', icon: FaRobot, label: 'Agents' },
     { path: '/workflows', icon: FaProjectDiagram, label: 'Workflows' },
     { path: '/logs', icon: FaTerminal, label: 'Logs' },
+    { path: '/vision', icon: FaEye, label: 'Vision Link' },
   ];
 
   return (
