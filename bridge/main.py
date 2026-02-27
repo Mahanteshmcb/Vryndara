@@ -22,17 +22,26 @@ class KernelBridge:
         
         try:
             async for signal in self.stub.Subscribe(agent_info):
+                # --- COGNITIVE FEEDBACK LOGIC ---
+                # If the signal is a task request or memory search, notify the UI
+                status = "IDLE"
+                if signal.type in ["TASK_REQUEST", "MEMORY_RETRIEVAL", "WORKFLOW_START"]:
+                    status = "THINKING"
+                
                 payload = {
                     "type": signal.type,
-                    "data": json.loads(signal.payload),
-                    "timestamp": signal.timestamp
+                    "data": json.loads(signal.payload) if signal.payload else {},
+                    "timestamp": signal.timestamp,
+                    "status": status  # This triggers the purple glow in React
                 }
+                
                 # Clean up closed connections while broadcasting
                 for connection in self.active_connections[:]:
                     try:
                         await connection.send_text(json.dumps(payload))
                     except:
                         self.active_connections.remove(connection)
+                        
         except Exception as e:
             print(f"❌ Kernel Stream Error: {e}")
 
@@ -63,6 +72,7 @@ async def websocket_endpoint(websocket: WebSocket):
     print(f"🌐 New Browser Connection: {websocket.client}")
     try:
         while True:
+            # Keep connection alive
             await websocket.receive_text()
     except:
         if websocket in bridge.active_connections:
@@ -70,5 +80,5 @@ async def websocket_endpoint(websocket: WebSocket):
 
 if __name__ == "__main__":
     import uvicorn
-    # Changed port to 8888 to avoid Windows permission/usage conflicts
+    # Using port 8888 as defined in your UI hooks
     uvicorn.run(app, host="127.0.0.1", port=8888)

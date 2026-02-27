@@ -20,3 +20,4 @@ numpy-stl
 matplotlib
 mediapipe == 0.10.9 --no-dependencies
 opencv-python
+chromadb
